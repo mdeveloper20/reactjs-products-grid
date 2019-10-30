@@ -5,8 +5,9 @@
   "description": "Build a grid of product items and ads",
   "main": "server/index.js",
   "scripts": {
-    "start": "json-server server/index.js --routes server/routes.json --middlewares server/handle-delay.js server/handle-ads.js"
-    
+    "start": "json-server server/index.js --routes server/routes.json --middlewares server/handle-delay.js server/handle-ads.js",
+    "build": "json-server server/index.js --routes server/routes.json --middlewares server/handle-delay.js server/handle-ads.js"
+
   },
 
   "author": "",
