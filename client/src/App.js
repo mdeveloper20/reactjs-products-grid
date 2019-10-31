@@ -4,11 +4,18 @@ import './App.css';
 
 class App extends React.Component {
 
+  state={
+    ads_src:""
+  }
+
   async componentDidMount(){
-    const response=await fetch("/api/products?_limit=5");
-    console.log(response);
-    const json=await response.json();
-    console.log(json);
+    const ads_src="/ads/?r="+ Math.floor(Math.random()*1000);
+    this.setState({ads_src});
+    // const response=await fetch("/api/products?_limit=5");
+    // console.log(response);
+    // const json=await response.json();
+    // console.log(json);
+
 
     
   }
@@ -17,18 +24,8 @@ class App extends React.Component {
     return (
       <div className="App">
         <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
+          <img className="ad" src={this.state.ads_src}/>
+
         </header>
       </div>
     );
