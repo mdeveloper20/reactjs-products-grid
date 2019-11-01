@@ -43,9 +43,8 @@ export default class HomePage extends React.Component {
     const response = await fetch(
       `/api/products?_limit=${limit}&_page=${currentPage}&_sort=${sort}`
     );
-    console.log( `/api/products?_limit=${limit}&_page=${currentPage}&_sort=${sort}`)
     const json = await response.json();
-    console.log("loaded");
+    
     this.setState({
       items: [...this.state.items, ...json],
       loading: false,
@@ -59,17 +58,38 @@ export default class HomePage extends React.Component {
     for (const value of this.state.items) {
       renderOutPut.push(
         <div key={value.id} className="ItemOuter">
-          <div  className="Item" style={{ fontSize: value.size }}>
+          <div className="Item" style={{ fontSize: value.size + "px" }}>
             {value.face}
           </div>
           <div>Size: {value.size}</div>
-          <div>Price: ${value.price/100}</div>
-          <div>{(new Date(value.date)).toDateString()}</div>
+          <div>Price: ${value.price / 100}</div>
+          <div className="ItemDate">{this.toRelative(value.date)}</div>
         </div>
       );
     }
     return renderOutPut;
   }
+
+  toRelative = previous => {
+    const current = new Date();
+    const msPerMinute = 60 * 1000;
+    const msPerHour = msPerMinute * 60;
+    const msPerDay = msPerHour * 24;
+
+    var elapsed = current - new Date(previous);
+
+    if (elapsed < msPerMinute) {
+      return Math.floor(elapsed / 1000) + " seconds ago";
+    } else if (elapsed < msPerHour) {
+      return Math.floor(elapsed / msPerMinute) + " minutes ago";
+    } else if (elapsed < msPerDay) {
+      return Math.floor(elapsed / msPerHour) + " hours ago";
+    } else if (elapsed < msPerDay * 8) {
+      return Math.floor(elapsed / msPerDay) + " days ago";
+    } else {
+      return new Date(previous).toDateString();
+    }
+  };
 
   showSortOptions = () => {
     var renderOutPut = [];
@@ -92,8 +112,12 @@ export default class HomePage extends React.Component {
     return renderOutPut;
   };
 
-  handleChange = async(event) => {
-    await this.setState({ sort: event.target.value, items: [], currentPage: 1 });
+  handleChange = async event => {
+    await this.setState({
+      sort: event.target.value,
+      items: [],
+      currentPage: 1
+    });
     this.loadMore(); //first fetch
   };
 
