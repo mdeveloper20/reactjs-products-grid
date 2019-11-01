@@ -1,15 +1,18 @@
 import React from "react";
+import loader from "./../../Images/loader.svg";
 
 export default class HomePage extends React.Component {
   state = {
     loading: false,
     limit: 12,
     currentPage: 1,
-    items: []
+    items: [],
+    sort: "size"
   };
 
   async componentDidMount() {
     window.addEventListener("scroll", this.handleScroll);
+    this.loadMore(); //first fetch
   }
 
   componentWillUnmount() {
@@ -34,14 +37,15 @@ export default class HomePage extends React.Component {
   };
 
   loadMore = async () => {
-    const { limit, currentPage } = this.state;
+    const { limit, currentPage, sort } = this.state;
     this.setState({ loading: true });
 
     const response = await fetch(
-      `/api/products?_limit=${limit}&_page=${currentPage}`
+      `/api/products?_limit=${limit}&_page=${currentPage}&_sort=${sort}`
     );
+    console.log( `/api/products?_limit=${limit}&_page=${currentPage}&_sort=${sort}`)
     const json = await response.json();
-    console.log(json);
+    console.log("loaded");
     this.setState({
       items: [...this.state.items, ...json],
       loading: false,
@@ -51,22 +55,61 @@ export default class HomePage extends React.Component {
 
   showItems() {
     var renderOutPut = [];
- 
-    for(const value of this.state.items){
-      renderOutPut.push(<li key={value.id}>{value.price}</li>);
 
+    for (const value of this.state.items) {
+      renderOutPut.push(
+        <div key={value.id} className="ItemOuter">
+          <div  className="Item" style={{ fontSize: value.size }}>
+            {value.face}
+          </div>
+          <div>Size: {value.size}</div>
+          <div>Price: ${value.price/100}</div>
+          <div>{(new Date(value.date)).toDateString()}</div>
+        </div>
+      );
     }
     return renderOutPut;
   }
 
+  showSortOptions = () => {
+    var renderOutPut = [];
+
+    renderOutPut.push(
+      <option key="size" value="size">
+        Size
+      </option>
+    );
+    renderOutPut.push(
+      <option key="price" value="price">
+        Price
+      </option>
+    );
+    renderOutPut.push(
+      <option key="id" value="id">
+        ID
+      </option>
+    );
+    return renderOutPut;
+  };
+
+  handleChange = async(event) => {
+    await this.setState({ sort: event.target.value, items: [], currentPage: 1 });
+    this.loadMore(); //first fetch
+  };
+
   render() {
     return (
-      <div className="App" style={{ overflow: "auto" }}>
-        <header className="App-header">
-          <h1 className="App-title">Welcome to React</h1>
-        </header>
-        <ul>{this.showItems()}</ul>
-        {this.state.loading ? <p className="App-intro">loading ...</p> : ""}
+      <div>
+        <div className="OrderBox">
+          <p>Order by:</p>
+          <select value={this.state.sort} onChange={this.handleChange}>
+            {this.showSortOptions()}
+          </select>
+        </div>
+        <div className="Container">
+          <div className="ItemContainer">{this.showItems()}</div>
+          {this.state.loading ? <img src={loader} /> : ""}
+        </div>
       </div>
     );
   }
