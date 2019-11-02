@@ -5,6 +5,18 @@ This is an ecommerce site, where you can buy all sorts of ascii faces like `(ノ
 
 Please read the instructions and FAQ below before beginning.
 
+How to run the project
+----
+```sh
+git clone https://github.com/mdeveloper20/reactjs-products-grid.git
+cd reactjs-products-grid
+npm install
+npm run buildClient
+npm start
+open the browser http://localhost:3050
+```
+
+
 Features
 ----
 
