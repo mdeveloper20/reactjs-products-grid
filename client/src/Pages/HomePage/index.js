@@ -3,23 +3,31 @@ import loader from "./../../Images/loader.svg";
 
 export default class HomePage extends React.Component {
   state = {
-    loading: false,
-    limit: 12,
-    currentPage: 1,
-    items: [],
-    sort: "size"
+    loading: true, //to show loading indicator
+    limit: 18, //limit number of items per request
+    currentPage: 1, //it holds next page that should fetch
+    items: [], //all items save here
+    sort: "size", //sort option
+    preItems: [] //an array like items[] to save items that will display when user scrolls down(#improve user's experience feature)
   };
 
   async componentDidMount() {
     window.addEventListener("scroll", this.handleScroll);
-    this.loadMore(); //first fetch
+
+    await this.loadMore(true); //first fetch to show
+    await this.loadMore(false); //fetch again to save it in preItems (pre-emptively)
+    this.setState({ loading: false });
   }
 
   componentWillUnmount() {
     window.removeEventListener("scroll", this.handleScroll);
   }
 
-  handleScroll = () => {
+  // componentDidUpdate(prevProps){
+  //   console.log(this.state)
+  // }
+
+  handleScroll = async () => {
     const scrollTop =
       (document.documentElement && document.documentElement.scrollTop) ||
       document.body.scrollTop;
@@ -32,24 +40,40 @@ export default class HomePage extends React.Component {
       Math.ceil(scrollTop + clientHeight) >= scrollHeight;
 
     if (scrolledToBottom && !this.state.loading) {
-      this.loadMore();
+      //first show saved items
+      await this.setState({
+        items: [...this.state.items, ...this.state.preItems],
+        preItems: [],
+        loading: true
+      });
+      //then fetch new items and save it into preItems state
+      await this.loadMore(false);
+      await this.setState({
+        loading: false
+      });
     }
   };
 
-  loadMore = async () => {
+  loadMore = async show => {
     const { limit, currentPage, sort } = this.state;
-    this.setState({ loading: true });
 
     const response = await fetch(
       `/api/products?_limit=${limit}&_page=${currentPage}&_sort=${sort}`
     );
     const json = await response.json();
-    
+
     this.setState({
-      items: [...this.state.items, ...json],
-      loading: false,
       currentPage: this.state.currentPage + 1
     });
+    if (show) {
+      this.setState({
+        items: [...this.state.items, ...json]
+      });
+    } else {
+      this.setState({
+        preItems: [...this.state.preItems, ...json]
+      });
+    }
   };
 
   showItems() {
@@ -70,7 +94,7 @@ export default class HomePage extends React.Component {
     return renderOutPut;
   }
 
-  toRelative = previous => {
+  toRelative = previous => { //convert date to relative mode. e.g 15 seconds ago
     const current = new Date();
     const msPerMinute = 60 * 1000;
     const msPerHour = msPerMinute * 60;
@@ -112,7 +136,7 @@ export default class HomePage extends React.Component {
     return renderOutPut;
   };
 
-  handleChange = async event => {
+  handleChange = async event => { //when sort option changes, reload all the items
     await this.setState({
       sort: event.target.value,
       items: [],
