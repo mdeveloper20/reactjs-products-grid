@@ -4,18 +4,19 @@ import loader from "./../../Images/loader.svg";
 export default class HomePage extends React.Component {
   state = {
     loading: true, //to show loading indicator
-    limit: 100, //limit number of items per request
+    limit: 18, //limit number of items per request
     nextPage: 1, //it holds next page that should fetch
     items: [], //all items save here
     sort: "size", //sort option
     preItems: [], //an array like items[] to save items that will display when user scrolls down(#improve user's experience feature)
-    allDataShown: false, //to show ~ end of catalogue ~ message 
-    dataFinished:false //to know when data is finished and be ready to show end message for the next scroll down
+    allDataShown: false, //to show ~ end of catalogue ~ message
+    dataFinished: false //to know when data is finished and be ready to show end message for the next scroll down
   };
 
   async componentDidMount() {
     window.addEventListener("scroll", this.handleScroll);
 
+    this.adsDB = []; //ads will store here
     await this.loadMore(true); //first fetch to show
     await this.loadMore(false); //fetch again to save it in preItems (pre-emptively)
     this.setState({ loading: false });
@@ -25,9 +26,6 @@ export default class HomePage extends React.Component {
     window.removeEventListener("scroll", this.handleScroll);
   }
 
-  // componentDidUpdate(prevProps){
-  //   console.log(this.state)
-  // }
 
   handleScroll = async () => {
     const scrollTop =
@@ -48,20 +46,19 @@ export default class HomePage extends React.Component {
         preItems: [],
         loading: true
       });
-      if(!this.state.dataFinished){
+      if (!this.state.dataFinished) {
         //then fetch new items and save it into preItems state
         await this.loadMore(false);
-        await this.setState({
+        this.setState({
           loading: false
         });
-      }else{
+      } else {
         //show end message & disable on scroll
-        await this.setState({
+        this.setState({
           loading: false,
-          allDataShown:true
+          allDataShown: true
         });
       }
-      
     }
   };
 
@@ -73,12 +70,12 @@ export default class HomePage extends React.Component {
     );
     const json = await response.json();
 
-    if(json.length===0){
+    if (json.length === 0) {
       //data is finished
       this.setState({
-        dataFinished: true,
+        dataFinished: true
       });
-    }else{
+    } else {
       this.setState({
         nextPage: this.state.nextPage + 1
       });
@@ -92,13 +89,28 @@ export default class HomePage extends React.Component {
         });
       }
     }
-    
+  };
+
+  getAdId = () => {
+    //generating random ad id when add is displayed as the test wanted
+    //ads server api has a small bug. Both r=7 and r=8 have same ad banner!
+    let id;
+    while (true) {
+      id = Math.floor(Math.random() * 10) + 0; //based on backend(handle-ad.js), there is no difference between 0-9 and 0-99999999 in ad real id result,
+      if (this.adsDB[this.adsDB.length - 1] !== id) {
+        //prevent same ad in a row
+        return id;
+      }
+    }
   };
 
   showItems() {
     var renderOutPut = [];
 
+    let itemCount = 0;
+    let adsCount = 0;
     for (const value of this.state.items) {
+      itemCount++;
       renderOutPut.push(
         <div key={value.id} className="ItemOuter">
           <div className="Item" style={{ fontSize: value.size + "px" }}>
@@ -109,11 +121,35 @@ export default class HomePage extends React.Component {
           <div className="ItemDate">{this.toRelative(value.date)}</div>
         </div>
       );
+
+      if (itemCount % 20 === 0) {
+        //check add id is exists or not in db
+        let adId;
+        if (this.adsDB[adsCount] !== undefined) {
+          adId = this.adsDB[adsCount];
+        } else {
+          adId = this.getAdId();
+          this.adsDB[adsCount] = adId;
+        }
+        adId = `/ads/?r=${adId}`;
+        renderOutPut.push(
+          <div
+            className="AdOuter"
+            key={"adfor" + itemCount}
+            id={"adfor" + itemCount}
+          >
+            <img className="ad" src={adId} />
+          </div>
+        );
+        adsCount++;
+      }
     }
+
     return renderOutPut;
   }
 
-  toRelative = previous => { //convert date to relative mode. e.g 15 seconds ago
+  toRelative = previous => {
+    //convert date to relative mode. e.g 15 seconds ago
     const current = new Date();
     const msPerMinute = 60 * 1000;
     const msPerHour = msPerMinute * 60;
@@ -155,7 +191,8 @@ export default class HomePage extends React.Component {
     return renderOutPut;
   };
 
-  handleChange = async event => { //when sort option changes, reload all the items
+  handleChange = async event => {
+    //when sort option changes, reload all the items
     await this.setState({
       sort: event.target.value,
       items: [],
