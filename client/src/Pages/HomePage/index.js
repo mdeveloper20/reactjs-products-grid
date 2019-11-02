@@ -26,7 +26,6 @@ export default class HomePage extends React.Component {
     window.removeEventListener("scroll", this.handleScroll);
   }
 
-
   handleScroll = async () => {
     const scrollTop =
       (document.documentElement && document.documentElement.scrollTop) ||
@@ -196,8 +195,12 @@ export default class HomePage extends React.Component {
     await this.setState({
       sort: event.target.value,
       items: [],
-      nextPage: 1
+      preItems: [],
+      nextPage: 1,
+      allDataShown: false,
+      dataFinished: false
     });
+    this.adsDB=[];
     this.loadMore(); //first fetch
   };
 
@@ -214,7 +217,6 @@ export default class HomePage extends React.Component {
           <div className="ItemContainer">{this.showItems()}</div>
           {this.state.loading ? <img src={loader} /> : ""}
           {this.state.allDataShown ? <p>~ end of catalogue ~</p> : ""}
-
         </div>
       </div>
     );
