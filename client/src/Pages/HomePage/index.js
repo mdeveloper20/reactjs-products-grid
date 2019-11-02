@@ -4,11 +4,13 @@ import loader from "./../../Images/loader.svg";
 export default class HomePage extends React.Component {
   state = {
     loading: true, //to show loading indicator
-    limit: 18, //limit number of items per request
-    currentPage: 1, //it holds next page that should fetch
+    limit: 100, //limit number of items per request
+    nextPage: 1, //it holds next page that should fetch
     items: [], //all items save here
     sort: "size", //sort option
-    preItems: [] //an array like items[] to save items that will display when user scrolls down(#improve user's experience feature)
+    preItems: [], //an array like items[] to save items that will display when user scrolls down(#improve user's experience feature)
+    allDataShown: false, //to show ~ end of catalogue ~ message 
+    dataFinished:false //to know when data is finished and be ready to show end message for the next scroll down
   };
 
   async componentDidMount() {
@@ -39,41 +41,58 @@ export default class HomePage extends React.Component {
     const scrolledToBottom =
       Math.ceil(scrollTop + clientHeight) >= scrollHeight;
 
-    if (scrolledToBottom && !this.state.loading) {
+    if (scrolledToBottom && !this.state.loading && !this.state.allDataShown) {
       //first show saved items
       await this.setState({
         items: [...this.state.items, ...this.state.preItems],
         preItems: [],
         loading: true
       });
-      //then fetch new items and save it into preItems state
-      await this.loadMore(false);
-      await this.setState({
-        loading: false
-      });
+      if(!this.state.dataFinished){
+        //then fetch new items and save it into preItems state
+        await this.loadMore(false);
+        await this.setState({
+          loading: false
+        });
+      }else{
+        //show end message & disable on scroll
+        await this.setState({
+          loading: false,
+          allDataShown:true
+        });
+      }
+      
     }
   };
 
   loadMore = async show => {
-    const { limit, currentPage, sort } = this.state;
+    const { limit, nextPage, sort } = this.state;
 
     const response = await fetch(
-      `/api/products?_limit=${limit}&_page=${currentPage}&_sort=${sort}`
+      `/api/products?_limit=${limit}&_page=${nextPage}&_sort=${sort}`
     );
     const json = await response.json();
 
-    this.setState({
-      currentPage: this.state.currentPage + 1
-    });
-    if (show) {
+    if(json.length===0){
+      //data is finished
       this.setState({
-        items: [...this.state.items, ...json]
+        dataFinished: true,
       });
-    } else {
+    }else{
       this.setState({
-        preItems: [...this.state.preItems, ...json]
+        nextPage: this.state.nextPage + 1
       });
+      if (show) {
+        this.setState({
+          items: [...this.state.items, ...json]
+        });
+      } else {
+        this.setState({
+          preItems: [...this.state.preItems, ...json]
+        });
+      }
     }
+    
   };
 
   showItems() {
@@ -140,7 +159,7 @@ export default class HomePage extends React.Component {
     await this.setState({
       sort: event.target.value,
       items: [],
-      currentPage: 1
+      nextPage: 1
     });
     this.loadMore(); //first fetch
   };
@@ -157,6 +176,8 @@ export default class HomePage extends React.Component {
         <div className="Container">
           <div className="ItemContainer">{this.showItems()}</div>
           {this.state.loading ? <img src={loader} /> : ""}
+          {this.state.allDataShown ? <p>~ end of catalogue ~</p> : ""}
+
         </div>
       </div>
     );
